@@ -27,8 +27,6 @@ Requirements
 -----------
 
 * Golang >= 1.7
-* Redis-server
-* Python >= 2.7
 
 Usage
 ------------
