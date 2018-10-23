@@ -34,25 +34,18 @@ Usage
 ------------
 
 ```sh
-$ # install redis-server
-$ yum install redis
-$ # start redis-server on 6379 port
-$ redis-server --port 6379 &
 $ # Install influxdb-proxy to your $GOPATH/bin
-$ go get -u github.com/shell909090/influx-proxy/service
-$ go install github.com/shell909090/influx-proxy/service
+$ go get -u github.com/hailwind/influx-proxy/service
+$ go install github.com/hailwind/influx-proxy/service
 $ mv $GOPATH/bin/service $GOPATH/bin/influxdb-proxy
-$ # Edit config.py and execute it
-$ python config.py
 $ # Start influx-proxy!
-$ $GOPATH/bin/influxdb-proxy -redis localhost:6379
+$ $GOPATH/bin/influxdb-proxy
 ```
 
 Configuration
 -------------
 
-Example configuration file is at [config.py](config.py). 
-We use config.py to genrate config to redis.
+Example configuration file is config.yaml
 
 Description
 -----------
