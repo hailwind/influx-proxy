@@ -12,7 +12,8 @@ import (
 	"net/http/pprof"
 	"strings"
 
-	"github.com/shell909090/influx-proxy/backend"
+	"github.com/hailwind/influx-proxy/backend"
+	"github.com/hailwind/influx-proxy/config"
 )
 
 type HttpService struct {
@@ -42,7 +43,7 @@ func (hs *HttpService) Register(mux *http.ServeMux) {
 
 func (hs *HttpService) HandlerReload(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	w.Header().Add("X-Influxdb-Version", config.VERSION)
 
 	err := hs.ic.LoadConfig()
 	if err != nil {
@@ -60,7 +61,6 @@ func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 	version, err := hs.ic.Ping()
 	if err != nil {
 		panic("WTF")
-		return
 	}
 	w.Header().Add("X-Influxdb-Version", version)
 	w.WriteHeader(204)
@@ -69,7 +69,7 @@ func (hs *HttpService) HandlerPing(w http.ResponseWriter, req *http.Request) {
 
 func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	w.Header().Add("X-Influxdb-Version", config.VERSION)
 
 	db := req.FormValue("db")
 	if hs.db != "" {
@@ -95,7 +95,7 @@ func (hs *HttpService) HandlerQuery(w http.ResponseWriter, req *http.Request) {
 
 func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-	w.Header().Add("X-Influxdb-Version", backend.VERSION)
+	w.Header().Add("X-Influxdb-Version", config.VERSION)
 
 	if req.Method != "POST" {
 		w.WriteHeader(405)

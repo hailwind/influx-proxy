@@ -11,21 +11,23 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/hailwind/influx-proxy/config"
 )
 
 func HandlerAny(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	log.Printf("handler any get url: %s", req.URL)
-	w.Header().Add("X-Influxdb-Version", VERSION)
+	w.Header().Add("X-Influxdb-Version", config.VERSION)
 	w.WriteHeader(204)
 	return
 }
 
-func CreateTestBackendConfig(dbname string) (cfg *BackendConfig, ts *httptest.Server) {
+func CreateTestBackendConfig(dbname string) (cfg *config.Backend, ts *httptest.Server) {
 	ts = httptest.NewServer(http.HandlerFunc(HandlerAny))
-	cfg = &BackendConfig{
-		URL:             ts.URL,
-		DB:              dbname,
+	cfg = &config.Backend{
+		Url:             ts.URL,
+		Db:              dbname,
 		Interval:        200,
 		Timeout:         4000,
 		TimeoutQuery:    6000,

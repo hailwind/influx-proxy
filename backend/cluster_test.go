@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/hailwind/influx-proxy/config"
 )
 
 func TestScanKey(t *testing.T) {
@@ -77,11 +79,10 @@ func BenchmarkScanKey(b *testing.B) {
 }
 
 func CreateTestInfluxCluster() (ic *InfluxCluster, err error) {
-	redisConfig := &RedisConfigSource{}
-	nodeConfig := &NodeConfig{}
-	ic = NewInfluxCluster(redisConfig, nodeConfig)
+	conf := config.Conf{}
+	ic = NewInfluxCluster(conf.Node, conf.Backends, conf.Measurements)
 	backends := make(map[string]BackendAPI)
-	bkcfgs := make(map[string]*BackendConfig)
+	bkcfgs := make(map[string]*config.Backend)
 	cfg, _ := CreateTestBackendConfig("test1")
 	bkcfgs["test1"] = cfg
 	cfg, _ = CreateTestBackendConfig("test2")
@@ -171,7 +172,7 @@ func TestInfluxdbClusterQuery(t *testing.T) {
 		return
 	}
 	w := NewDummyResponseWriter()
-	w.Header().Add("X-Influxdb-Version", VERSION)
+	w.Header().Add("X-Influxdb-Version", config.VERSION)
 	q := url.Values{}
 	q.Set("db", "test")
 

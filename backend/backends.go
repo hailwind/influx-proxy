@@ -10,6 +10,8 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"github.com/hailwind/influx-proxy/config"
 )
 
 const (
@@ -34,10 +36,9 @@ type Backends struct {
 }
 
 // maybe ch_timer is not the best way.
-func NewBackends(cfg *BackendConfig, name string) (bs *Backends, err error) {
+func NewBackends(cfg *config.Backend, name string) (bs *Backends, err error) {
 	bs = &Backends{
-		HttpBackend: NewHttpBackend(cfg),
-		// FIXME: path...
+		HttpBackend:     NewHttpBackend(cfg),
 		Interval:        cfg.Interval,
 		RewriteInterval: cfg.RewriteInterval,
 		running:         true,
@@ -138,6 +139,7 @@ func (bs *Backends) WriteBuffer(p []byte) {
 }
 
 func (bs *Backends) Flush() {
+	log.Printf("Flush to %s database: %s rows: %d", bs.URL, bs.DB, bs.write_counter)
 	if bs.buffer == nil {
 		return
 	}

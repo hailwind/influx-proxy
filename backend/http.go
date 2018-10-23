@@ -15,6 +15,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/hailwind/influx-proxy/config"
 )
 
 var (
@@ -50,7 +52,7 @@ type HttpBackend struct {
 	WriteOnly int
 }
 
-func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
+func NewHttpBackend(cfg *config.Backend) (hb *HttpBackend) {
 	hb = &HttpBackend{
 		client: &http.Client{
 			Timeout: time.Millisecond * time.Duration(cfg.Timeout),
@@ -60,8 +62,8 @@ func NewHttpBackend(cfg *BackendConfig) (hb *HttpBackend) {
 		// 	Timeout: time.Millisecond * time.Duration(cfg.TimeoutQuery),
 		// },
 		Interval:  cfg.CheckInterval,
-		URL:       cfg.URL,
-		DB:        cfg.DB,
+		URL:       cfg.Url,
+		DB:        cfg.Db,
 		Zone:      cfg.Zone,
 		Active:    true,
 		running:   true,
@@ -173,7 +175,6 @@ func (hb *HttpBackend) Write(p []byte) (err error) {
 		log.Print("compress error: ", err)
 		return
 	}
-
 	log.Printf("http backend write %s", hb.DB)
 	err = hb.WriteStream(&buf, true)
 	return
@@ -201,7 +202,6 @@ func (hb *HttpBackend) WriteStream(stream io.Reader, compressed bool) (err error
 		return
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode == 204 {
 		return
 	}

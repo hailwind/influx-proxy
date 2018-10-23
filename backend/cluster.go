@@ -18,7 +18,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/shell909090/influx-proxy/monitor"
+	"github.com/hailwind/influx-proxy/config"
+	"github.com/hailwind/influx-proxy/monitor"
 )
 
 var (
@@ -61,15 +62,15 @@ func TrimRight(p []byte, s []byte) (r []byte) {
 }
 
 // TODO: kafka next
-
 type InfluxCluster struct {
 	lock           sync.RWMutex
+	bkcfgs         []config.Backend
+	mmcfgs         []config.Measurement
 	Zone           string
 	nexts          string
 	query_executor Querier
 	ForbiddenQuery []*regexp.Regexp
 	ObligatedQuery []*regexp.Regexp
-	cfgsrc         *RedisConfigSource
 	bas            []BackendAPI
 	backends       map[string]BackendAPI
 	m2bs           map[string][]BackendAPI // measurements to backends
@@ -94,12 +95,13 @@ type Statistics struct {
 	QueryRequestDuration int64
 }
 
-func NewInfluxCluster(cfgsrc *RedisConfigSource, nodecfg *NodeConfig) (ic *InfluxCluster) {
+func NewInfluxCluster(nodecfg config.Node, bkcfgs []config.Backend, mmcfgs []config.Measurement) (ic *InfluxCluster) {
 	ic = &InfluxCluster{
+		bkcfgs:         bkcfgs,
+		mmcfgs:         mmcfgs,
 		Zone:           nodecfg.Zone,
 		nexts:          nodecfg.Nexts,
 		query_executor: &InfluxQLExecutor{},
-		cfgsrc:         cfgsrc,
 		bas:            make([]BackendAPI, 0),
 		stats:          &Statistics{},
 		counter:        &Statistics{},
@@ -120,12 +122,10 @@ func NewInfluxCluster(cfgsrc *RedisConfigSource, nodecfg *NodeConfig) (ic *Influ
 	err = ic.ForbidQuery(ForbidCmds)
 	if err != nil {
 		panic(err)
-		return
 	}
 	err = ic.EnsureQuery(SupportCmds)
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	// feature
@@ -219,13 +219,8 @@ func (ic *InfluxCluster) AddNext(ba BackendAPI) {
 func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, bas []BackendAPI, err error) {
 	backends = make(map[string]BackendAPI)
 
-	bkcfgs, err := ic.cfgsrc.LoadBackends()
-	if err != nil {
-		return
-	}
-
-	for name, cfg := range bkcfgs {
-		backends[name], err = NewBackends(cfg, name)
+	for _, backend := range ic.bkcfgs {
+		backends[backend.Name], err = NewBackends(&backend, backend.Name)
 		if err != nil {
 			log.Printf("create backend error: %s", err)
 			return
@@ -250,14 +245,9 @@ func (ic *InfluxCluster) loadBackends() (backends map[string]BackendAPI, bas []B
 func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs map[string][]BackendAPI, err error) {
 	m2bs = make(map[string][]BackendAPI)
 
-	m_map, err := ic.cfgsrc.LoadMeasurements()
-	if err != nil {
-		return
-	}
-
-	for name, bs_names := range m_map {
+	for _, mm := range ic.mmcfgs {
 		var bss []BackendAPI
-		for _, bs_name := range bs_names {
+		for _, bs_name := range mm.Backends {
 			bs, ok := backends[bs_name]
 			if !ok {
 				err = ErrBackendNotExist
@@ -266,7 +256,7 @@ func (ic *InfluxCluster) loadMeasurements(backends map[string]BackendAPI) (m2bs 
 			}
 			bss = append(bss, bs)
 		}
-		m2bs[name] = bss
+		m2bs[mm.Name] = bss
 	}
 	return
 }
@@ -300,7 +290,7 @@ func (ic *InfluxCluster) LoadConfig() (err error) {
 
 func (ic *InfluxCluster) Ping() (version string, err error) {
 	atomic.AddInt64(&ic.stats.PingRequests, 1)
-	version = VERSION
+	version = config.VERSION
 	return
 }
 
@@ -503,7 +493,6 @@ func (ic *InfluxCluster) Write(p []byte) (err error) {
 		if len(line) == 0 {
 			break
 		}
-
 		ic.WriteRow(line)
 	}
 

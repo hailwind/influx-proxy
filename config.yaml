@@ -1,0 +1,34 @@
+
+node:
+  listenaddr: 0.0.0.0:6666
+  db: telegraf
+  interval: 10
+  idletimeout: 10
+  querytracing: 0
+  writetracing: 0
+measurements:
+  - name: _default_
+    backends: [server1, server2]
+  - name: snmp
+    backends: [server1, server2]
+  - name: icmp
+    backends: [server1, server2]
+backends:
+  - name: server1
+    url: http://127.0.0.1:8086
+    db: telegraf
+    interval: 300
+    timeout: 10000
+    timeoutquery: 600000
+    maxrowlimit: 10000
+    checkinterval: 1000
+    rewriteinterval: 10000
+  - name: server2
+    url: http://127.0.0.1:8087
+    db: telegraf
+    interval: 300
+    timeout: 10000
+    timeoutquery: 600000
+    maxrowlimit: 10000
+    checkinterval: 1000
+    rewriteinterval: 10000
