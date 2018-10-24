@@ -12,6 +12,7 @@ const (
 )
 
 type Node struct {
+	Name         string
 	ListenAddr   string
 	Zone         string
 	DB           string
@@ -42,7 +43,7 @@ type Measurement struct {
 }
 
 type Conf struct {
-	Node         Node
+	Nodes        []Node
 	Measurements []Measurement
 	Backends     []Backend
 }

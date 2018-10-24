@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/hailwind/influx-proxy/backend"
@@ -47,29 +48,35 @@ func initLog() {
 func main() {
 	initLog()
 
-	var err error
 	var c config.Conf
 	conf := c.GetConf(ConfigFile)
-	var nodecfg = conf.Node
+	var workResultLock sync.WaitGroup
+	for _, nodecfg := range conf.Nodes {
+		workResultLock.Add(1)
+		go func(nodecfg config.Node) {
+			var err error
+			ic := backend.NewInfluxCluster(nodecfg, conf.Backends, conf.Measurements)
+			ic.LoadConfig()
 
-	ic := backend.NewInfluxCluster(nodecfg, conf.Backends, conf.Measurements)
-	ic.LoadConfig()
+			mux := http.NewServeMux()
+			NewHttpService(ic, nodecfg.DB).Register(mux)
 
-	mux := http.NewServeMux()
-	NewHttpService(ic, nodecfg.DB).Register(mux)
-
-	log.Printf("http service start.")
-	server := &http.Server{
-		Addr:        nodecfg.ListenAddr,
-		Handler:     mux,
-		IdleTimeout: time.Duration(nodecfg.IdleTimeout) * time.Second,
+			log.Printf("http service start at %s.", nodecfg.ListenAddr)
+			server := &http.Server{
+				Addr:        nodecfg.ListenAddr,
+				Handler:     mux,
+				IdleTimeout: time.Duration(nodecfg.IdleTimeout) * time.Second,
+			}
+			if nodecfg.IdleTimeout <= 0 {
+				server.IdleTimeout = 10 * time.Second
+			}
+			err = server.ListenAndServe()
+			if err != nil {
+				log.Print(err)
+				workResultLock.Done()
+				return
+			}
+		}(nodecfg)
 	}
-	if nodecfg.IdleTimeout <= 0 {
-		server.IdleTimeout = 10 * time.Second
-	}
-	err = server.ListenAndServe()
-	if err != nil {
-		log.Print(err)
-		return
-	}
+	workResultLock.Wait()
 }
