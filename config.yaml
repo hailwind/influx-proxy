@@ -1,14 +1,6 @@
 nodes:
   - name: telegraf
     listenaddr: 0.0.0.0:6666
-    db: telegraf
-    interval: 30
-    idletimeout: 10
-    querytracing: 0
-    writetracing: 0
-  - name: syscxp
-    listenaddr: 0.0.0.0:6667
-    db: syscxp
     interval: 30
     idletimeout: 10
     querytracing: 0
