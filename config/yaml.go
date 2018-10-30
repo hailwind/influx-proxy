@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -42,10 +43,31 @@ type Measurement struct {
 	Backends []string
 }
 
+type JudgeConfig struct {
+	Enabled     bool
+	Batch       int
+	ConnTimeout int
+	CallTimeout int
+	MaxConns    int
+	MaxIdle     int
+	Replicas    int
+	EndpointTag string
+	Cluster     map[string]string
+	ClusterList map[string]*ClusterNode
+	MetricMap   map[string]string
+	TagMap      map[string]string
+	DropTag     []string
+}
+
+type ClusterNode struct {
+	Addrs []string `json:"addrs"`
+}
+
 type Conf struct {
 	Nodes        []Node
 	Measurements []Measurement
 	Backends     []Backend
+	Judge        *JudgeConfig
 }
 
 func (c *Conf) GetConf(configPath string) *Conf {
@@ -60,7 +82,28 @@ func (c *Conf) GetConf(configPath string) *Conf {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
+	c.Judge.ClusterList = formatClusterItems(c.Judge.Cluster)
 	return c
+}
+
+func NewClusterNode(addrs []string) *ClusterNode {
+	return &ClusterNode{addrs}
+}
+
+// map["node"]="host1,host2" --> map["node"]=["host1", "host2"]
+func formatClusterItems(cluster map[string]string) map[string]*ClusterNode {
+	ret := make(map[string]*ClusterNode)
+	for node, clusterStr := range cluster {
+		items := strings.Split(clusterStr, ",")
+		nitems := make([]string, 0)
+		for _, item := range items {
+			nitems = append(nitems, strings.TrimSpace(item))
+		}
+		ret[node] = NewClusterNode(nitems)
+	}
+
+	return ret
 }
 
 // func main() {

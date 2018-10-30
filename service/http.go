@@ -133,6 +133,9 @@ func (hs *HttpService) HandlerWrite(w http.ResponseWriter, req *http.Request) {
 	}
 
 	err = hs.ic.Write(p)
+
+	backend.Push2JudgeSendQueue(p)
+
 	if err == nil {
 		w.WriteHeader(204)
 	}

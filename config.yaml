@@ -32,7 +32,7 @@ backends:
     checkinterval: 1000
     rewriteinterval: 10000
   - name: syscxp1
-    url: http://192.168.211.73:8086
+    url: http://127.0.0.1:8086
     db: syscxp
     interval: 300
     timeout: 10000
@@ -41,7 +41,7 @@ backends:
     checkinterval: 1000
     rewriteinterval: 10000
   - name: syscxp2
-    url: http://192.168.211.137:8086
+    url: http://192.168.211.73:8086
     db: syscxp
     interval: 300
     timeout: 10000
@@ -49,3 +49,34 @@ backends:
     maxrowlimit: 10000
     checkinterval: 1000
     rewriteinterval: 10000
+judge: 
+  enabled: true
+  batch: 200
+  conntimeout: 1000
+  calltimeout: 5000
+  maxconns: 30
+  maxidle: 30
+  replicas: 500
+  endpointtag: "device_ip"
+  cluster:
+    {
+      "judge-00" : "192.168.211.70:6080"
+    }
+  metricmap: 
+    {
+      "ext_lost":"endpoint.packets.lost",
+      "ext_rtt":"endpoint.packets.rtt",
+      "vsi_lost":"tunnel.packets.lost",
+      "vsi_rtt":"tunnel.packets.rtt",
+      "vpn_lost":"l3.packets.lost",
+      "vpn_rtt":"l3.packets.rtt",
+      "in_rate":"switch.if.In",
+      "out_rate":"switch.if.Out",
+      "in_pkts_rate":"switch.if.InPkts",
+      "out_pkts_rate":"switch.if.OutPkts"
+    }
+  tagmap:
+    {
+      "if_name":"ifName"
+    }
+  droptag: ["agent_host", "device_ip", "if_alias"]

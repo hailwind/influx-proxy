@@ -50,6 +50,10 @@ func main() {
 
 	var c config.Conf
 	conf := c.GetConf(ConfigFile)
+
+	// 初始化Judge任务
+	backend.StartJudgeTask(conf.Judge)
+
 	var workResultLock sync.WaitGroup
 	for _, nodecfg := range conf.Nodes {
 		workResultLock.Add(1)
